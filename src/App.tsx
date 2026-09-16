@@ -22,12 +22,23 @@ export default function App() {
     setCurrentUser(active);
     setIsLoading(false);
 
-    // If Google Apps Script Web App URL is configured, quietly pull latest members from Sheet3
+    // If Google Apps Script Web App URL is configured, pull latest members and records in real-time
     if (GoogleSheetsService.getScriptUrl()) {
-      GoogleSheetsService.fetchMembersFromSheet3().catch((e) => {
-        console.warn('Initial Sheet3 member fetch notice:', e);
+      GoogleSheetsService.fetchAllRealtime(true).catch((e) => {
+        console.warn('Initial real-time fetch notice:', e);
       });
     }
+
+    const handleRealtimeDataChange = () => {
+      const current = StorageService.getCurrentUser();
+      setCurrentUser(current);
+      setAppRefreshKey(prev => prev + 1);
+    };
+
+    window.addEventListener('mutabaah_data_updated', handleRealtimeDataChange);
+    return () => {
+      window.removeEventListener('mutabaah_data_updated', handleRealtimeDataChange);
+    };
   }, []);
 
   const handleUserChange = (user: User | null) => {

@@ -20,7 +20,7 @@ export const INITIAL_USERS: User[] = [
     jenisKelamin: 'Laki-laki',
     kodeGrup: 'PUSAT',
     role: 'admin',
-    password: 'admin',
+    password: 'bkapjakpus',
     noHp: '081234567890',
     createdAt: '2024-01-01T00:00:00.000Z'
   },
@@ -297,22 +297,43 @@ function generateSampleRecords(users: User[]): MutabaahRecord[] {
 }
 
 let onRecordSavedCallback: ((record: MutabaahRecord) => void) | null = null;
+let onDeleteRecordCallback: ((record: { id: string; tanggal?: string; nia?: string }) => void) | null = null;
 let onUserAddedCallback: ((user: User) => void) | null = null;
+let onUserUpdatedCallback: ((user: User) => void) | null = null;
+let onUserDeletedCallback: ((user: { id: string; nia: string; namaLengkap: string }) => void) | null = null;
 
 export const StorageService = {
   setRealtimeSyncHandlers(handlers: {
     onSaveRecord?: (record: MutabaahRecord) => void;
+    onDeleteRecord?: (record: { id: string; tanggal?: string; nia?: string }) => void;
     onAddUser?: (user: User) => void;
+    onUpdateUser?: (user: User) => void;
+    onDeleteUser?: (user: { id: string; nia: string; namaLengkap: string }) => void;
   }) {
     if (handlers.onSaveRecord) onRecordSavedCallback = handlers.onSaveRecord;
+    if (handlers.onDeleteRecord) onDeleteRecordCallback = handlers.onDeleteRecord;
     if (handlers.onAddUser) onUserAddedCallback = handlers.onAddUser;
+    if (handlers.onUpdateUser) onUserUpdatedCallback = handlers.onUpdateUser;
+    if (handlers.onDeleteUser) onUserDeletedCallback = handlers.onDeleteUser;
   },
 
   getUsers(): User[] {
     try {
       const stored = localStorage.getItem(USERS_STORAGE_KEY);
       if (stored) {
-        return JSON.parse(stored);
+        const parsed: User[] = JSON.parse(stored);
+        // Ensure admin password is migrated to bkapjakpus
+        let modified = false;
+        parsed.forEach(u => {
+          if (u.role === 'admin' && (u.password === 'admin' || !u.password)) {
+            u.password = 'bkapjakpus';
+            modified = true;
+          }
+        });
+        if (modified) {
+          this.saveUsers(parsed);
+        }
+        return parsed;
       }
     } catch (e) {
       console.error('Error reading users from localStorage', e);
@@ -327,6 +348,45 @@ export const StorageService = {
       localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
     } catch (e) {
       console.error('Error saving users to localStorage', e);
+    }
+  },
+
+  updateUser(updatedUser: User): void {
+    const users = this.getUsers();
+    const index = users.findIndex(u => u.id === updatedUser.id);
+    if (index >= 0) {
+      users[index] = updatedUser;
+      this.saveUsers(users);
+
+      // Sync member's updated info into their existing mutabaah records
+      const records = this.getRecords();
+      let recordsModified = false;
+      records.forEach(r => {
+        if (r.userId === updatedUser.id) {
+          r.namaLengkap = updatedUser.namaLengkap;
+          r.nia = updatedUser.nia;
+          r.kodeGrup = updatedUser.kodeGrup;
+          r.jenisKelamin = updatedUser.jenisKelamin;
+          recordsModified = true;
+        }
+      });
+      if (recordsModified) {
+        this.saveRecords(records);
+      }
+
+      // If current user is this updated user, update currentUser storage as well
+      const current = this.getCurrentUser();
+      if (current && current.id === updatedUser.id) {
+        this.setCurrentUser(updatedUser);
+      }
+
+      if (onUserUpdatedCallback) {
+        try {
+          onUserUpdatedCallback(updatedUser);
+        } catch (err) {
+          console.warn('Realtime sync user updated callback error:', err);
+        }
+      }
     }
   },
 
@@ -350,11 +410,20 @@ export const StorageService = {
   },
 
   deleteUser(userId: string): void {
+    const existing = this.getUsers().find(u => u.id === userId);
     const users = this.getUsers().filter(u => u.id !== userId);
     this.saveUsers(users);
     // Also remove their mutabaah records
     const records = this.getRecords().filter(r => r.userId !== userId);
     this.saveRecords(records);
+
+    if (existing && onUserDeletedCallback) {
+      try {
+        onUserDeletedCallback({ id: existing.id, nia: existing.nia, namaLengkap: existing.namaLengkap });
+      } catch (err) {
+        console.warn('Realtime sync user deleted callback error:', err);
+      }
+    }
   },
 
   getRecords(): MutabaahRecord[] {
@@ -381,9 +450,23 @@ export const StorageService = {
     }
   },
 
-  saveRecord(record: MutabaahRecord): void {
+  deleteRecord(recordId: string): void {
+    const existing = this.getRecords().find(r => r.id === recordId);
+    const records = this.getRecords().filter(r => r.id !== recordId);
+    this.saveRecords(records);
+
+    if (existing && onDeleteRecordCallback) {
+      try {
+        onDeleteRecordCallback({ id: existing.id, tanggal: existing.tanggal, nia: existing.nia });
+      } catch (err) {
+        console.warn('Realtime delete record callback error:', err);
+      }
+    }
+  },
+
+  updateRecord(record: MutabaahRecord): void {
     const records = this.getRecords();
-    const index = records.findIndex(r => r.userId === record.userId && r.tanggal === record.tanggal);
+    const index = records.findIndex(r => r.id === record.id || (r.userId === record.userId && r.tanggal === record.tanggal));
     if (index >= 0) {
       records[index] = record;
     } else {
@@ -399,6 +482,10 @@ export const StorageService = {
     }
   },
 
+  saveRecord(record: MutabaahRecord): void {
+    this.updateRecord(record);
+  },
+
   getRecordByUserAndDate(userId: string, tanggal: string): MutabaahRecord | undefined {
     const records = this.getRecords();
     return records.find(r => r.userId === userId && r.tanggal === tanggal);
@@ -408,7 +495,12 @@ export const StorageService = {
     try {
       const stored = localStorage.getItem(CURRENT_USER_KEY);
       if (stored) {
-        return JSON.parse(stored);
+        const cur: User = JSON.parse(stored);
+        if (cur.role === 'admin' && (cur.password === 'admin' || !cur.password)) {
+          cur.password = 'bkapjakpus';
+          this.setCurrentUser(cur);
+        }
+        return cur;
       }
     } catch (e) {
       console.error('Error reading current user', e);

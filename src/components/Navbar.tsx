@@ -28,6 +28,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [hasSheetsUrl, setHasSheetsUrl] = useState(false);
+  const [isQuickSyncing, setIsQuickSyncing] = useState(false);
   const users = StorageService.getUsers();
 
   useEffect(() => {
@@ -35,11 +36,29 @@ export const Navbar: React.FC<NavbarProps> = ({
       setHasSheetsUrl(!!GoogleSheetsService.getScriptUrl());
     };
     checkUrl();
-    const unsub = GoogleSheetsService.subscribe(() => {
+    const unsub = GoogleSheetsService.subscribe((event) => {
       checkUrl();
+      if (event.status === 'syncing') {
+        setIsQuickSyncing(true);
+      } else {
+        setIsQuickSyncing(false);
+      }
     });
     return unsub;
   }, []);
+
+  const handleQuickSync = async () => {
+    if (!GoogleSheetsService.getScriptUrl()) {
+      if (onOpenGoogleSheets) onOpenGoogleSheets();
+      return;
+    }
+    setIsQuickSyncing(true);
+    try {
+      await GoogleSheetsService.fetchAllRealtime();
+    } finally {
+      setIsQuickSyncing(false);
+    }
+  };
 
   const handleSwitchAccount = (user: User) => {
     StorageService.setCurrentUser(user);
@@ -80,6 +99,19 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* User Section & Google Sheets Action */}
           <div className="flex items-center space-x-2 sm:space-x-3">
+            {/* Quick Realtime Sync Trigger */}
+            {hasSheetsUrl && (
+              <button
+                onClick={handleQuickSync}
+                disabled={isQuickSyncing}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-800/90 hover:bg-emerald-700 text-emerald-100 border border-emerald-600/60 shadow-xs transition-all disabled:opacity-60"
+                title="Tarik data real-time dari Sheet3 dan Rekap Mutabaah"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 text-emerald-300 ${isQuickSyncing ? 'animate-spin' : ''}`} />
+                <span className="hidden md:inline">{isQuickSyncing ? 'Menarik...' : 'Sync Sheet3'}</span>
+              </button>
+            )}
+
             {/* Google Sheets Sync Indicator & Button */}
             {onOpenGoogleSheets && (
               <button
@@ -89,7 +121,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     ? 'bg-emerald-800/90 hover:bg-emerald-700/90 text-emerald-100 border-emerald-500/50'
                     : 'bg-emerald-950/80 hover:bg-emerald-800 text-emerald-200 border-emerald-700/60'
                 }`}
-                title="Integrasi Google Sheets & Real-Time Sync"
+                title="Integrasi Google Sheets & Real-Time Sync (Sheet3)"
               >
                 <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
                 <span className="hidden sm:inline">Google Sheets</span>

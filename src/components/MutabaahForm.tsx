@@ -27,18 +27,22 @@ import {
   Check, 
   AlertCircle,
   HelpCircle,
-  Award
+  Award,
+  Trash2
 } from 'lucide-react';
+import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 
 interface MutabaahFormProps {
   user: User;
   onRecordSaved?: (record: MutabaahRecord) => void;
+  onRecordDeleted?: (date: string) => void;
 }
 
-export const MutabaahForm: React.FC<MutabaahFormProps> = ({ user, onRecordSaved }) => {
+export const MutabaahForm: React.FC<MutabaahFormProps> = ({ user, onRecordSaved, onRecordDeleted }) => {
   const [selectedDate, setSelectedDate] = useState(getFormattedDate());
   const [isExistingRecord, setIsExistingRecord] = useState(false);
   const [isSavedSuccess, setIsSavedSuccess] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   // Udzur syar'i for akhwat
   const [isUdzur, setIsUdzur] = useState(false);
@@ -1205,15 +1209,52 @@ export const MutabaahForm: React.FC<MutabaahFormProps> = ({ user, onRecordSaved 
           </div>
         </div>
 
-        <button
-          type="submit"
-          id="btn-simpan-mutabaah"
-          className="px-6 py-3 bg-emerald-700 hover:bg-emerald-800 active:bg-emerald-900 text-white font-bold text-sm rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-2"
-        >
-          <Save className="w-4 h-4" />
-          <span>{isExistingRecord ? 'Perbarui Mutabaah' : 'Simpan Mutabaah Yaumiah'}</span>
-        </button>
+        <div className="flex items-center gap-2">
+          {isExistingRecord && (
+            <button
+              type="button"
+              onClick={() => setIsDeleteModalOpen(true)}
+              className="px-4 py-3 bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold text-xs rounded-xl border border-rose-200 transition-colors flex items-center gap-1.5"
+              title="Hapus data mutabaah untuk tanggal ini"
+            >
+              <Trash2 className="w-4 h-4 text-rose-600" />
+              <span className="hidden sm:inline">Hapus Isian Hari Ini</span>
+            </button>
+          )}
+
+          <button
+            type="submit"
+            id="btn-simpan-mutabaah"
+            className="px-6 py-3 bg-emerald-700 hover:bg-emerald-800 active:bg-emerald-900 text-white font-bold text-sm rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-2"
+          >
+            <Save className="w-4 h-4" />
+            <span>{isExistingRecord ? 'Perbarui Mutabaah' : 'Simpan Mutabaah Yaumiah'}</span>
+          </button>
+        </div>
       </div>
+
+      <ConfirmDeleteModal
+        isOpen={isDeleteModalOpen}
+        title="Hapus Data Mutabaah Hari Ini"
+        message={`Apakah Anda yakin ingin menghapus data mutabaah tanggal ${selectedDate}? Seluruh catatan dan poin ibadah tanggal ini akan dikosongkan.`}
+        itemDetails={[
+          { label: 'Tanggal', value: selectedDate },
+          { label: 'Skor Total Saat Ini', value: `${liveScore.skorTotal} / 100` }
+        ]}
+        onConfirm={() => {
+          const rec = StorageService.getRecordByUserAndDate(user.id, selectedDate);
+          if (rec) {
+            StorageService.deleteRecord(rec.id);
+          }
+          setIsDeleteModalOpen(false);
+          setIsExistingRecord(false);
+          setIsSavedSuccess(false);
+          if (onRecordDeleted) {
+            onRecordDeleted(selectedDate);
+          }
+        }}
+        onCancel={() => setIsDeleteModalOpen(false)}
+      />
 
     </form>
   );

@@ -12,15 +12,24 @@ import {
   BookOpen, 
   Activity,
   Flame,
-  Clock
+  Clock,
+  Pencil,
+  Trash2
 } from 'lucide-react';
 
 interface MutabaahDetailModalProps {
   record: MutabaahRecord | null;
   onClose: () => void;
+  onEdit?: (record: MutabaahRecord) => void;
+  onDelete?: (record: MutabaahRecord) => void;
 }
 
-export const MutabaahDetailModal: React.FC<MutabaahDetailModalProps> = ({ record, onClose }) => {
+export const MutabaahDetailModal: React.FC<MutabaahDetailModalProps> = ({ 
+  record, 
+  onClose,
+  onEdit,
+  onDelete
+}) => {
   if (!record) return null;
 
   const formatIndonesianDate = (dateStr: string) => {
@@ -262,7 +271,35 @@ export const MutabaahDetailModal: React.FC<MutabaahDetailModalProps> = ({ record
         </div>
 
         {/* Footer */}
-        <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end">
+        <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {onDelete && (
+              <button
+                onClick={() => {
+                  onDelete(record);
+                  onClose();
+                }}
+                className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold rounded-lg text-xs transition-colors flex items-center gap-1.5 border border-rose-200"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                <span>Hapus Data</span>
+              </button>
+            )}
+
+            {onEdit && (
+              <button
+                onClick={() => {
+                  onEdit(record);
+                  onClose();
+                }}
+                className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold rounded-lg text-xs transition-colors flex items-center gap-1.5 border border-amber-300"
+              >
+                <Pencil className="w-3.5 h-3.5 text-amber-700" />
+                <span>Edit Data</span>
+              </button>
+            )}
+          </div>
+
           <button
             onClick={onClose}
             className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold rounded-lg text-xs transition-colors"

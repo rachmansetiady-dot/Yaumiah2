@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { User, MutabaahRecord, JenisKelamin } from '../types';
 import { StorageService, getFormattedDate, DEFAULT_GROUPS } from '../utils/storage';
 import { MutabaahDetailModal } from './MutabaahDetailModal';
+import { EditMemberModal } from './EditMemberModal';
+import { EditMutabaahModal } from './EditMutabaahModal';
+import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 import { 
   Users, 
   CheckCircle2, 
@@ -14,6 +17,7 @@ import {
   UserPlus, 
   Trash2, 
   Eye, 
+  Pencil,
   Sparkles, 
   BarChart3, 
   FileSpreadsheet,
@@ -40,6 +44,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminUser, onOpe
   const [activeTab, setActiveTab] = useState<'rekap' | 'grup' | 'anggota'>('rekap');
 
   const [selectedRecordForDetail, setSelectedRecordForDetail] = useState<MutabaahRecord | null>(null);
+  const [selectedRecordForEdit, setSelectedRecordForEdit] = useState<MutabaahRecord | null>(null);
+  const [selectedMemberForEdit, setSelectedMemberForEdit] = useState<User | null>(null);
+
+  const [deleteModalState, setDeleteModalState] = useState<{
+    isOpen: boolean;
+    type: 'record' | 'member';
+    id: string;
+    title: string;
+    message: string;
+    details?: { label: string; value: string }[];
+  }>({
+    isOpen: false,
+    type: 'record',
+    id: '',
+    title: '',
+    message: '',
+    details: []
+  });
+
   const [refreshKey, setRefreshKey] = useState(0);
 
   const users = StorageService.getUsers();
@@ -102,11 +125,47 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminUser, onOpe
     window.print();
   };
 
-  const handleDeleteMember = (userId: string, nama: string) => {
-    if (window.confirm(`Yakin ingin menghapus anggota "${nama}"? Semua riwayat mutabaah anggota ini juga akan dihapus.`)) {
-      StorageService.deleteUser(userId);
-      setRefreshKey(prev => prev + 1);
+  const handleRequestDeleteRecord = (record: MutabaahRecord) => {
+    setDeleteModalState({
+      isOpen: true,
+      type: 'record',
+      id: record.id,
+      title: 'Hapus Data Mutabaah',
+      message: `Apakah Anda yakin ingin menghapus data mutabaah ${record.namaLengkap} pada tanggal ${record.tanggal}? Tindakan ini akan menghapus riwayat evaluasi hari tersebut secara permanen.`,
+      details: [
+        { label: 'Nama Anggota', value: record.namaLengkap },
+        { label: 'Tanggal', value: formatIndonesianDate(record.tanggal) },
+        { label: 'Grup / Usrah', value: record.kodeGrup },
+        { label: 'Skor Mutabaah', value: `${record.skorTotal} / 100` }
+      ]
+    });
+  };
+
+  const handleRequestDeleteMember = (member: User) => {
+    const memberRecordCount = allRecords.filter(r => r.userId === member.id).length;
+    setDeleteModalState({
+      isOpen: true,
+      type: 'member',
+      id: member.id,
+      title: 'Hapus Data Anggota',
+      message: `Apakah Anda yakin ingin menghapus data anggota ${member.namaLengkap} (${member.nia})? Seluruh riwayat mutabaah (${memberRecordCount} hari) anggota ini juga akan dihapus.`,
+      details: [
+        { label: 'Nama Anggota', value: member.namaLengkap },
+        { label: 'Nomor Induk (NIA)', value: member.nia },
+        { label: 'Grup / Usrah', value: member.kodeGrup },
+        { label: 'Total Riwayat Isian', value: `${memberRecordCount} Hari` }
+      ]
+    });
+  };
+
+  const handleConfirmDelete = () => {
+    if (deleteModalState.type === 'record') {
+      StorageService.deleteRecord(deleteModalState.id);
+    } else if (deleteModalState.type === 'member') {
+      StorageService.deleteUser(deleteModalState.id);
     }
+    setDeleteModalState(prev => ({ ...prev, isOpen: false }));
+    setRefreshKey(prev => prev + 1);
   };
 
   const formatIndonesianDate = (dateStr: string) => {
@@ -518,15 +577,33 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminUser, onOpe
                               </span>
                             </td>
 
-                            {/* Detail Action */}
+                            {/* Actions (Detail, Edit, Hapus) */}
                             <td className="p-3 text-center">
-                              <button
-                                onClick={() => setSelectedRecordForDetail(rec)}
-                                className="p-1.5 rounded-lg bg-slate-100 hover:bg-emerald-50 hover:text-emerald-800 text-slate-600 transition-colors"
-                                title="Lihat Detail Lengkap"
-                              >
-                                <Eye className="w-3.5 h-3.5" />
-                              </button>
+                              <div className="flex items-center justify-center gap-1">
+                                <button
+                                  onClick={() => setSelectedRecordForDetail(rec)}
+                                  className="p-1.5 rounded-lg bg-slate-100 hover:bg-emerald-50 text-slate-600 hover:text-emerald-800 transition-colors"
+                                  title="Lihat Detail Lengkap"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                </button>
+
+                                <button
+                                  onClick={() => setSelectedRecordForEdit(rec)}
+                                  className="p-1.5 rounded-lg bg-slate-100 hover:bg-amber-50 text-slate-600 hover:text-amber-700 transition-colors"
+                                  title="Edit Data Mutabaah Ini"
+                                >
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </button>
+
+                                <button
+                                  onClick={() => handleRequestDeleteRecord(rec)}
+                                  className="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-700 transition-colors"
+                                  title="Hapus Data Mutabaah Ini"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
                             </td>
                           </>
                         ) : (
@@ -697,13 +774,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminUser, onOpe
                           {userRecordCount} Hari
                         </td>
                         <td className="p-3 text-center">
-                          <button
-                            onClick={() => handleDeleteMember(u.id, u.namaLengkap)}
-                            className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 transition-colors"
-                            title="Hapus Anggota"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          <div className="flex items-center justify-center gap-1">
+                            <button
+                              onClick={() => setSelectedMemberForEdit(u)}
+                              className="p-1.5 rounded-lg text-slate-600 hover:bg-amber-50 hover:text-amber-700 transition-colors"
+                              title="Edit Data Anggota"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+
+                            <button
+                              onClick={() => handleRequestDeleteMember(u)}
+                              className="p-1.5 rounded-lg text-slate-600 hover:bg-rose-50 hover:text-rose-700 transition-colors"
+                              title="Hapus Anggota"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -720,6 +807,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminUser, onOpe
       <MutabaahDetailModal 
         record={selectedRecordForDetail} 
         onClose={() => setSelectedRecordForDetail(null)} 
+        onEdit={(rec) => setSelectedRecordForEdit(rec)}
+        onDelete={(rec) => handleRequestDeleteRecord(rec)}
+      />
+
+      <EditMutabaahModal
+        record={selectedRecordForEdit}
+        onClose={() => setSelectedRecordForEdit(null)}
+        onRecordUpdated={() => setRefreshKey(prev => prev + 1)}
+        onDeleteRequest={(rec) => handleRequestDeleteRecord(rec)}
+      />
+
+      <EditMemberModal
+        user={selectedMemberForEdit}
+        onClose={() => setSelectedMemberForEdit(null)}
+        onMemberUpdated={() => setRefreshKey(prev => prev + 1)}
+      />
+
+      <ConfirmDeleteModal
+        isOpen={deleteModalState.isOpen}
+        title={deleteModalState.title}
+        message={deleteModalState.message}
+        itemDetails={deleteModalState.details}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeleteModalState(prev => ({ ...prev, isOpen: false }))}
       />
 
     </div>

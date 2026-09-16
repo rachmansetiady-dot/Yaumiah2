@@ -38,11 +38,13 @@ export const GoogleSheetsModal: React.FC<GoogleSheetsModalProps> = ({
   const [spreadsheetUrl, setSpreadsheetUrl] = useState('');
   const [rawSheet3Text, setRawSheet3Text] = useState('');
   const [autoSync, setAutoSync] = useState(true);
+  const [pollInterval, setPollInterval] = useState(25);
   const [isCopied, setIsCopied] = useState(false);
   
   // Action Loading States
   const [isTesting, setIsTesting] = useState(false);
   const [isFetchingMembers, setIsFetchingMembers] = useState(false);
+  const [isFetchingAll, setIsFetchingAll] = useState(false);
   const [isFetchingDirectUrl, setIsFetchingDirectUrl] = useState(false);
   const [isPushingRecords, setIsPushingRecords] = useState(false);
   
@@ -54,6 +56,7 @@ export const GoogleSheetsModal: React.FC<GoogleSheetsModalProps> = ({
     if (isOpen) {
       setScriptUrl(GoogleSheetsService.getScriptUrl());
       setAutoSync(GoogleSheetsService.isAutoSyncEnabled());
+      setPollInterval(GoogleSheetsService.getPollIntervalSeconds());
       setFeedback(null);
     }
   }, [isOpen]);
@@ -121,6 +124,34 @@ export const GoogleSheetsModal: React.FC<GoogleSheetsModalProps> = ({
     if (res.success && onDataUpdated) {
       onDataUpdated();
     }
+  };
+
+  const handleFetchAllRealtime = async () => {
+    if (!scriptUrl.trim()) {
+      setFeedback({ type: 'error', text: 'Simpan URL Web App terlebih dahulu sebelum menarik data.' });
+      return;
+    }
+    handleSaveUrl();
+    setIsFetchingAll(true);
+    setFeedback(null);
+    const res = await GoogleSheetsService.fetchAllRealtime();
+    setIsFetchingAll(false);
+    setFeedback({
+      type: res.success ? 'success' : 'error',
+      text: res.message
+    });
+    if (res.success && onDataUpdated) {
+      onDataUpdated();
+    }
+  };
+
+  const handleChangePollInterval = (sec: number) => {
+    setPollInterval(sec);
+    GoogleSheetsService.setPollIntervalSeconds(sec);
+    setFeedback({
+      type: 'info',
+      text: `Frekuensi penarikan real-time di latar belakang diatur ke setiap ${sec} detik.`
+    });
   };
 
   const handleFetchFromSpreadsheetUrl = async () => {
@@ -345,33 +376,88 @@ export const GoogleSheetsModal: React.FC<GoogleSheetsModalProps> = ({
               </div>
 
               {/* Real-Time Auto Sync Option */}
-              <div className="bg-emerald-50/70 border border-emerald-200 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                    <Zap className="w-5 h-5" />
+              <div className="bg-emerald-50/70 border border-emerald-200 rounded-2xl p-4 sm:p-5 space-y-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                      <Zap className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-emerald-950 flex items-center gap-1.5">
+                        Sinkronisasi Real-Time Otomatis
+                        <span className="bg-emerald-200 text-emerald-900 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                          Rekomendasi
+                        </span>
+                      </h4>
+                      <p className="text-[11px] text-emerald-800 mt-0.5">
+                        Setiap perubahan isian mutabaah atau data anggota di dashboard langsung disinkronkan ke Google Sheets secara real-time.
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-emerald-950 flex items-center gap-1.5">
-                      Sinkronisasi Real-Time Otomatis
-                      <span className="bg-emerald-200 text-emerald-900 text-[10px] px-2 py-0.5 rounded-full font-bold">
-                        Rekomendasi
-                      </span>
-                    </h4>
-                    <p className="text-[11px] text-emerald-800 mt-0.5">
-                      Setiap kali ada inputan, perubahan isian mutabaah harian, atau penambahan anggota di dashboard, data di Google Sheets langsung terupdate otomatis.
-                    </p>
-                  </div>
+
+                  <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                    <input
+                      type="checkbox"
+                      checked={autoSync}
+                      onChange={(e) => handleToggleAutoSync(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                  </label>
                 </div>
 
-                <label className="relative inline-flex items-center cursor-pointer shrink-0">
-                  <input
-                    type="checkbox"
-                    checked={autoSync}
-                    onChange={(e) => handleToggleAutoSync(e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
-                </label>
+                {/* Polling Interval Setting */}
+                {autoSync && (
+                  <div className="pt-3 border-t border-emerald-200/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs">
+                    <div className="flex items-center gap-1.5 text-emerald-900 font-medium">
+                      <RefreshCw className="w-3.5 h-3.5 text-emerald-700" />
+                      <span>Interval Tarik Data Latar Belakang (Real-time polling):</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {[15, 25, 60].map((sec) => (
+                        <button
+                          key={sec}
+                          onClick={() => handleChangePollInterval(sec)}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                            pollInterval === sec
+                              ? 'bg-emerald-700 text-white shadow-xs'
+                              : 'bg-white text-emerald-900 hover:bg-emerald-100 border border-emerald-300'
+                          }`}
+                        >
+                          {sec} Detik
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Master Real-Time Pull Button */}
+              <div className="bg-gradient-to-r from-emerald-900 via-emerald-800 to-teal-900 text-white p-4 sm:p-5 rounded-2xl shadow-sm space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-emerald-300" />
+                      <h4 className="text-sm font-bold text-white">
+                        Tarik Seluruh Data Real-Time Sekarang
+                      </h4>
+                      <span className="bg-emerald-500/30 text-emerald-200 text-[10px] px-2 py-0.5 rounded-full border border-emerald-400/30 font-semibold">
+                        Sheet3 + Rekap Mutabaah
+                      </span>
+                    </div>
+                    <p className="text-xs text-emerald-200/80">
+                      Menarik data anggota terbaru dari tab <strong className="text-white">Sheet3</strong> dan rekaman evaluasi dari <strong className="text-white">Rekap_Mutabaah</strong> dalam 1 kali klik.
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleFetchAllRealtime}
+                    disabled={isFetchingAll}
+                    className="px-4 py-2.5 bg-emerald-400 hover:bg-emerald-300 text-emerald-950 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-md shrink-0 disabled:opacity-50"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${isFetchingAll ? 'animate-spin' : ''}`} />
+                    <span>{isFetchingAll ? 'Menarik Data...' : 'Tarik Real-Time'}</span>
+                  </button>
+                </div>
               </div>
 
               {/* Manual Direct Sync Actions */}

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { User } from '../types';
 import { StorageService } from '../utils/storage';
+import { GoogleSheetsService } from '../services/googleSheetsService';
 import { 
   BookOpen, 
   ShieldCheck, 
@@ -9,7 +10,8 @@ import {
   AlertCircle,
   ArrowRight,
   FileSpreadsheet,
-  Check
+  Check,
+  RefreshCw
 } from 'lucide-react';
 
 interface AuthScreenProps {
@@ -24,6 +26,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess, onOpenGo
   const [niaOrUsername, setNiaOrUsername] = useState('');
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [isVerifyingSheet3, setIsVerifyingSheet3] = useState(false);
+  const [isManualPulling, setIsManualPulling] = useState(false);
 
   const users = StorageService.getUsers();
   const matchedUser = niaOrUsername.trim() ? users.find(u => 
@@ -31,21 +35,57 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess, onOpenGo
     (loginRole === 'admin' && (niaOrUsername.trim().toLowerCase() === 'admin' || u.nia.toLowerCase() === niaOrUsername.trim().toLowerCase()))
   ) : null;
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handlePullSheet3 = async () => {
+    if (!GoogleSheetsService.getScriptUrl()) {
+      if (onOpenGoogleSheets) onOpenGoogleSheets();
+      return;
+    }
+    setIsManualPulling(true);
+    setErrorMessage('');
+    try {
+      const res = await GoogleSheetsService.fetchMembersFromSheet3();
+      if (!res.success) {
+        setErrorMessage(res.message);
+      }
+    } finally {
+      setIsManualPulling(false);
+    }
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
 
-    const allUsers = StorageService.getUsers();
+    let allUsers = StorageService.getUsers();
     const query = niaOrUsername.trim().toLowerCase();
 
     // Find matching user by NIA or username or ID
-    const foundUser = allUsers.find(u => {
+    let foundUser = allUsers.find(u => {
       const matchIdentity = 
         u.nia.toLowerCase() === query || 
         u.namaLengkap.toLowerCase() === query ||
         (u.role === 'admin' && (query === 'admin' || u.nia.toLowerCase() === query));
       return matchIdentity;
     });
+
+    // If member not found locally, attempt a real-time fetch from Sheet3 if GAS URL is configured
+    if (!foundUser && loginRole === 'anggota' && GoogleSheetsService.getScriptUrl()) {
+      setIsVerifyingSheet3(true);
+      try {
+        const pullRes = await GoogleSheetsService.fetchMembersFromSheet3(true);
+        if (pullRes.success) {
+          allUsers = StorageService.getUsers();
+          foundUser = allUsers.find(u => 
+            u.nia.toLowerCase() === query || 
+            u.namaLengkap.toLowerCase() === query
+          );
+        }
+      } catch (err) {
+        console.warn('Realtime fetch on login attempt:', err);
+      } finally {
+        setIsVerifyingSheet3(false);
+      }
+    }
 
     if (!foundUser) {
       setErrorMessage(
@@ -64,7 +104,11 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess, onOpenGo
 
     // Password validation
     if (foundUser.password && foundUser.password !== password) {
-      setErrorMessage('Kata sandi yang Anda masukkan salah. Silakan periksa kembali kata sandi di Sheet3.');
+      setErrorMessage(
+        loginRole === 'admin'
+          ? 'Kata sandi admin salah. Pastikan menggunakan kata sandi admin (bkapjakpus).'
+          : 'Kata sandi yang Anda masukkan salah. Silakan periksa kembali kata sandi di Sheet3.'
+      );
       return;
     }
 
@@ -95,17 +139,31 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess, onOpenGo
           <div className="mt-4 flex items-center justify-between text-[11px] bg-emerald-950/70 py-1.5 px-3 rounded-lg border border-emerald-700/50 text-emerald-200">
             <span className="flex items-center gap-1.5 truncate">
               <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
-              <span>Autentikasi terhubung <strong>Sheet3</strong></span>
+              <span className="truncate">
+                Autentikasi terhubung <strong>Sheet3</strong> ({users.filter(u => u.role === 'anggota').length} Anggota)
+              </span>
             </span>
-            {onOpenGoogleSheets && (
+            <div className="flex items-center gap-2 shrink-0 ml-2">
               <button
                 type="button"
-                onClick={onOpenGoogleSheets}
-                className="text-[10px] text-amber-300 hover:text-amber-200 underline font-semibold shrink-0 ml-2"
+                onClick={handlePullSheet3}
+                disabled={isManualPulling}
+                className="text-[10px] bg-emerald-800 hover:bg-emerald-700 text-emerald-100 px-2 py-0.5 rounded font-medium flex items-center gap-1 transition-colors"
+                title="Tarik pembaruan anggota Sheet3 langsung"
               >
-                Atur Sheets
+                <RefreshCw className={`w-2.5 h-2.5 ${isManualPulling ? 'animate-spin' : ''}`} />
+                <span>{isManualPulling ? 'Menarik...' : 'Tarik Sheet3'}</span>
               </button>
-            )}
+              {onOpenGoogleSheets && (
+                <button
+                  type="button"
+                  onClick={onOpenGoogleSheets}
+                  className="text-[10px] text-amber-300 hover:text-amber-200 underline font-semibold"
+                >
+                  Atur
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -198,7 +256,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess, onOpenGo
               ) : (
                 <p className="text-[11px] text-slate-500 mt-1">
                   {loginRole === 'admin' 
-                    ? 'Gunakan username admin dan kata sandi Anda' 
+                    ? 'Gunakan ADM-001 atau username admin (Password: bkapjakpus)' 
                     : 'Gunakan Nomor Induk Anggota (NIA) yang terdaftar pada tab Sheet3'}
                 </p>
               )}
@@ -223,10 +281,20 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess, onOpenGo
 
             <button
               type="submit"
-              className="w-full py-2.5 px-4 bg-emerald-700 hover:bg-emerald-800 active:bg-emerald-900 text-white rounded-xl font-semibold text-sm shadow-md hover:shadow transition-all flex items-center justify-center space-x-2"
+              disabled={isVerifyingSheet3}
+              className="w-full py-2.5 px-4 bg-emerald-700 hover:bg-emerald-800 active:bg-emerald-900 text-white rounded-xl font-semibold text-sm shadow-md hover:shadow transition-all flex items-center justify-center space-x-2 disabled:opacity-75"
             >
-              <span>Masuk Sekarang</span>
-              <ArrowRight className="w-4 h-4" />
+              {isVerifyingSheet3 ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin text-white" />
+                  <span>Memeriksa Data ke Sheet3...</span>
+                </>
+              ) : (
+                <>
+                  <span>Masuk Sekarang</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
             </button>
           </form>
 

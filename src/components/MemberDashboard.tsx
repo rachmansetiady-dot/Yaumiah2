@@ -3,6 +3,8 @@ import { User, MutabaahRecord } from '../types';
 import { StorageService, getFormattedDate } from '../utils/storage';
 import { MutabaahForm } from './MutabaahForm';
 import { MutabaahDetailModal } from './MutabaahDetailModal';
+import { EditMutabaahModal } from './EditMutabaahModal';
+import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 import { 
   PenTool, 
   History, 
@@ -13,6 +15,8 @@ import {
   Calendar, 
   Flame, 
   Eye, 
+  Pencil,
+  Trash2,
   ChevronRight,
   TrendingUp,
   BookOpen,
@@ -28,6 +32,8 @@ interface MemberDashboardProps {
 export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user }) => {
   const [activeTab, setActiveTab] = useState<'form' | 'history' | 'stats'>('form');
   const [selectedRecordForDetail, setSelectedRecordForDetail] = useState<MutabaahRecord | null>(null);
+  const [selectedRecordForEdit, setSelectedRecordForEdit] = useState<MutabaahRecord | null>(null);
+  const [recordToDelete, setRecordToDelete] = useState<MutabaahRecord | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const todayStr = getFormattedDate();
@@ -319,13 +325,32 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user }) => {
                         </span>
                       </div>
 
-                      <button
-                        onClick={() => setSelectedRecordForDetail(rec)}
-                        className="px-3 py-1.5 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-800 text-slate-700 font-semibold rounded-lg text-xs flex items-center gap-1 transition-colors"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                        <span>Detail</span>
-                      </button>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => setSelectedRecordForDetail(rec)}
+                          className="px-2.5 py-1.5 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-800 text-slate-700 font-semibold rounded-lg text-xs flex items-center gap-1 transition-colors"
+                          title="Lihat Detail"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline">Detail</span>
+                        </button>
+
+                        <button
+                          onClick={() => setSelectedRecordForEdit(rec)}
+                          className="p-1.5 bg-slate-100 hover:bg-amber-50 text-slate-600 hover:text-amber-700 rounded-lg text-xs transition-colors"
+                          title="Edit Data Mutabaah Ini"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+
+                        <button
+                          onClick={() => setRecordToDelete(rec)}
+                          className="p-1.5 bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-700 rounded-lg text-xs transition-colors"
+                          title="Hapus Data Mutabaah Ini"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -471,6 +496,35 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({ user }) => {
       <MutabaahDetailModal 
         record={selectedRecordForDetail} 
         onClose={() => setSelectedRecordForDetail(null)} 
+        onEdit={(rec) => setSelectedRecordForEdit(rec)}
+        onDelete={(rec) => setRecordToDelete(rec)}
+      />
+
+      {/* Edit Mutabaah Modal */}
+      <EditMutabaahModal
+        record={selectedRecordForEdit}
+        onClose={() => setSelectedRecordForEdit(null)}
+        onRecordUpdated={() => setRefreshTrigger(prev => prev + 1)}
+        onDeleteRequest={(rec) => setRecordToDelete(rec)}
+      />
+
+      {/* Confirm Delete Record Modal */}
+      <ConfirmDeleteModal
+        isOpen={!!recordToDelete}
+        title="Hapus Catatan Mutabaah"
+        message={recordToDelete ? `Apakah Anda yakin ingin menghapus catatan mutabaah tanggal ${recordToDelete.tanggal}? Data yang dihapus tidak dapat dipulihkan.` : ''}
+        itemDetails={recordToDelete ? [
+          { label: 'Tanggal', value: recordToDelete.tanggal },
+          { label: 'Skor Total', value: `${recordToDelete.skorTotal} / 100` }
+        ] : []}
+        onConfirm={() => {
+          if (recordToDelete) {
+            StorageService.deleteRecord(recordToDelete.id);
+            setRecordToDelete(null);
+            setRefreshTrigger(prev => prev + 1);
+          }
+        }}
+        onCancel={() => setRecordToDelete(null)}
       />
 
     </div>
