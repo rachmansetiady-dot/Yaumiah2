@@ -1324,20 +1324,9 @@ function getMembersFromSheet3(ss) {
   var data = sheet.getDataRange().getValues();
   var members = [];
 
-  // Berikan data sample jika baris masih kosong
+  // Jika baris masih kosong / hanya ada header, kembalikan array kosong (tanpa akun demo)
   if (data.length <= 1) {
-    var initialData = [
-      ['NIA-2024-001', 'USRAH-ALFALAH', '123', 'Ahmad Fauzan Pratama', 'Laki-laki', '081298765431'],
-      ['NIA-2024-002', 'USRAH-ANNUR', '123', 'Fathimah Az-Zahra', 'Perempuan', '081298765432'],
-      ['NIA-2024-003', 'USRAH-ALFALAH', '123', 'Muhammad Ridwan Syahputra', 'Laki-laki', '081298765433'],
-      ['NIA-2024-004', 'USRAH-ANNUR', '123', 'Nurul Hidayah Putri', 'Perempuan', '081298765434'],
-      ['NIA-2024-005', 'USRAH-ALIKHLAS', '123', 'Zaid Abdullah Mansur', 'Laki-laki', '081298765435'],
-      ['NIA-2024-006', 'USRAH-ALIKHLAS', '123', 'Aisyah Humaira', 'Perempuan', '081298765436']
-    ];
-    for (var i = 0; i < initialData.length; i++) {
-      sheet.appendRow(initialData[i]);
-    }
-    data = sheet.getDataRange().getValues();
+    return [];
   }
 
   var headers = data[0].map(function(h) { return String(h).trim().toLowerCase(); });

@@ -7,6 +7,8 @@ import {
   ShieldCheck, 
   UserCheck, 
   Lock, 
+  Eye,
+  EyeOff,
   AlertCircle,
   ArrowRight,
   FileSpreadsheet,
@@ -25,6 +27,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess, onOpenGo
   // Login State - Clean and empty without automatic fill
   const [niaOrUsername, setNiaOrUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [isVerifyingSheet3, setIsVerifyingSheet3] = useState(false);
   const [isManualPulling, setIsManualPulling] = useState(false);
@@ -236,7 +239,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess, onOpenGo
                   required
                   value={niaOrUsername}
                   onChange={(e) => setNiaOrUsername(e.target.value)}
-                  placeholder={loginRole === 'admin' ? 'Masukkan ADM-001 atau username admin' : 'Masukkan NIA (misal: NIA-2024-001)'}
+                  placeholder={loginRole === 'admin' ? 'Masukkan ADM-001 atau username admin' : 'Masukkan NIA Anda (misal: NIA-001)'}
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:bg-white text-slate-800"
                 />
               </div>
@@ -267,15 +270,30 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess, onOpenGo
                 Kata Sandi
               </label>
               <div className="relative">
+                <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
                 <input
-                  type="password"
+                  id="auth-password-input"
+                  type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Masukkan kata sandi"
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:bg-white text-slate-800"
+                  className="w-full pl-10 pr-11 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:bg-white text-slate-800"
                 />
-                <Lock className="w-4 h-4 text-slate-400 absolute right-3.5 top-3" />
+                <button
+                  type="button"
+                  id="btn-toggle-password-visibility"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? 'Sembunyikan kata sandi' : 'Lihat kata sandi'}
+                  title={showPassword ? 'Sembunyikan kata sandi' : 'Lihat kata sandi'}
+                  className="absolute right-2.5 top-2 p-1.5 text-slate-400 hover:text-emerald-700 focus:outline-none rounded-lg hover:bg-slate-100 transition-colors"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4 text-emerald-600" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
               </div>
             </div>
 

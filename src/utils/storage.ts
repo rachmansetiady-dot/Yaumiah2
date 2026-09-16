@@ -16,79 +16,13 @@ export const INITIAL_USERS: User[] = [
   {
     id: 'user-admin',
     nia: 'ADM-001',
-    namaLengkap: 'Ust. H. Abdurrahman Hakim',
+    namaLengkap: 'Administrator',
     jenisKelamin: 'Laki-laki',
     kodeGrup: 'PUSAT',
     role: 'admin',
     password: 'bkapjakpus',
     noHp: '081234567890',
     createdAt: '2024-01-01T00:00:00.000Z'
-  },
-  {
-    id: 'user-001',
-    nia: 'NIA-2024-001',
-    namaLengkap: 'Ahmad Fauzan Pratama',
-    jenisKelamin: 'Laki-laki',
-    kodeGrup: 'USRAH-ALFALAH',
-    role: 'anggota',
-    password: '123',
-    noHp: '081298765431',
-    createdAt: '2024-01-10T00:00:00.000Z'
-  },
-  {
-    id: 'user-002',
-    nia: 'NIA-2024-002',
-    namaLengkap: 'Fathimah Az-Zahra',
-    jenisKelamin: 'Perempuan',
-    kodeGrup: 'USRAH-ANNUR',
-    role: 'anggota',
-    password: '123',
-    noHp: '081298765432',
-    createdAt: '2024-01-11T00:00:00.000Z'
-  },
-  {
-    id: 'user-003',
-    nia: 'NIA-2024-003',
-    namaLengkap: 'Muhammad Ridwan Syahputra',
-    jenisKelamin: 'Laki-laki',
-    kodeGrup: 'USRAH-ALFALAH',
-    role: 'anggota',
-    password: '123',
-    noHp: '081298765433',
-    createdAt: '2024-01-12T00:00:00.000Z'
-  },
-  {
-    id: 'user-004',
-    nia: 'NIA-2024-004',
-    namaLengkap: 'Nurul Hidayah Putri',
-    jenisKelamin: 'Perempuan',
-    kodeGrup: 'USRAH-ANNUR',
-    role: 'anggota',
-    password: '123',
-    noHp: '081298765434',
-    createdAt: '2024-01-13T00:00:00.000Z'
-  },
-  {
-    id: 'user-005',
-    nia: 'NIA-2024-005',
-    namaLengkap: 'Zaid Abdullah Mansur',
-    jenisKelamin: 'Laki-laki',
-    kodeGrup: 'USRAH-ALIKHLAS',
-    role: 'anggota',
-    password: '123',
-    noHp: '081298765435',
-    createdAt: '2024-01-14T00:00:00.000Z'
-  },
-  {
-    id: 'user-006',
-    nia: 'NIA-2024-006',
-    namaLengkap: 'Aisyah Humaira',
-    jenisKelamin: 'Perempuan',
-    kodeGrup: 'USRAH-ALIKHLAS',
-    role: 'anggota',
-    password: '123',
-    noHp: '081298765436',
-    createdAt: '2024-01-15T00:00:00.000Z'
   }
 ];
 
@@ -194,113 +128,14 @@ export function calculateScore(
   };
 }
 
-// Generate some sample records for yesterday and today
-function generateSampleRecords(users: User[]): MutabaahRecord[] {
-  const today = new Date();
-  const yesterday = new Date(today);
-  yesterday.setDate(yesterday.getDate() - 1);
-  const twoDaysAgo = new Date(today);
-  twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
-
-  const dates = [
-    getFormattedDate(today),
-    getFormattedDate(yesterday),
-    getFormattedDate(twoDaysAgo)
-  ];
-
-  const sampleRecords: MutabaahRecord[] = [];
-  const anggotaList = users.filter(u => u.role === 'anggota');
-
-  dates.forEach((tgl, dIdx) => {
-    anggotaList.forEach((u, uIdx) => {
-      // simulate some varying completion
-      if (dIdx === 0 && uIdx === 4) return; // one member hasn't filled today yet
-
-      const isAhmad = u.nia === 'NIA-2024-001';
-      const isFathimah = u.nia === 'NIA-2024-002';
-      const isAkhwat = u.jenisKelamin === 'Perempuan';
-
-      const ruhiah: AspekRuhiah = {
-        tilawah: {
-          dikerjakan: true,
-          satuan: 'halaman',
-          jumlah: isAhmad ? 20 : isFathimah ? 10 : 8,
-          suratAyat: isAhmad ? 'QS. Al-Baqarah 1-141' : 'QS. Ali Imran 50-90'
-        },
-        sholatQiamulail: {
-          dikerjakan: dIdx !== 2 || uIdx % 2 === 0,
-          rakaat: isAhmad ? 8 : 4,
-          catatan: 'Tahajjud & Witir'
-        },
-        sholatSubuhBerjamaahMasjid: {
-          status: isAkhwat ? 'ya' : (uIdx % 3 === 0 ? 'ya' : 'masbuq'),
-          keterangan: isAkhwat ? 'Tepat waktu di rumah' : 'Di Masjid Al-Muhajirin'
-        },
-        almatsurat: {
-          status: (dIdx + uIdx) % 2 === 0 ? 'lengkap' : 'pagi_saja',
-          jenis: 'kubro'
-        },
-        puasaSunah: {
-          dikerjakan: dIdx === 1, // yesterday did puasa
-          jenisPuasa: 'senin_kamis',
-          keterangan: 'Puasa sunah Senin'
-        }
-      };
-
-      const fikriah: AspekFikriah = {
-        membacaMateriKkp: {
-          dikerjakan: true,
-          judulMateri: 'Materi KKP Bab 3: Urgensi Ibadah & Dakwah',
-          durasiMenit: 25,
-          halaman: 'Hal 45-60',
-          catatanRefleksi: 'Memperdalam pemahaman tentang konsekuensi iman dalam keseharian.'
-        },
-        hafalanSuratKkp: {
-          dikerjakan: true,
-          jenis: uIdx % 2 === 0 ? 'ziyadah' : 'murajaah',
-          namaSuratAyat: 'QS. Al-Mulk ayat 1-15',
-          tingkatKelancaran: 'mutqin'
-        }
-      };
-
-      const jasadiah: AspekJasadiah = {
-        olahraga: {
-          dikerjakan: dIdx !== 1, // did sports today & 2 days ago
-          jenisOlahraga: isAkhwat ? 'Senam / Workout Rumah' : 'Jogging / Lari santai',
-          durasiMenit: 30,
-          keterangan: 'Pagi hari sebelum aktivitas'
-        }
-      };
-
-      const scores = calculateScore(ruhiah, fikriah, jasadiah, false);
-
-      sampleRecords.push({
-        id: `rec-${u.id}-${tgl}`,
-        userId: u.id,
-        nia: u.nia,
-        namaLengkap: u.namaLengkap,
-        jenisKelamin: u.jenisKelamin,
-        kodeGrup: u.kodeGrup,
-        tanggal: tgl,
-        isUdzurSyari: false,
-        aspekRuhiah: ruhiah,
-        aspekFikriah: fikriah,
-        aspekJasadiah: jasadiah,
-        catatanHarian: 'Alhamdulillah target harian terlaksana dengan baik.',
-        ...scores,
-        updatedAt: new Date().toISOString()
-      });
-    });
-  });
-
-  return sampleRecords;
-}
-
 let onRecordSavedCallback: ((record: MutabaahRecord) => void) | null = null;
 let onDeleteRecordCallback: ((record: { id: string; tanggal?: string; nia?: string }) => void) | null = null;
 let onUserAddedCallback: ((user: User) => void) | null = null;
 let onUserUpdatedCallback: ((user: User) => void) | null = null;
 let onUserDeletedCallback: ((user: { id: string; nia: string; namaLengkap: string }) => void) | null = null;
+
+const DEMO_USER_IDS = ['user-001', 'user-002', 'user-003', 'user-004', 'user-005', 'user-006'];
+const isDemoNia = (nia?: string) => !!nia && /^NIA-2024-00[1-6]$/i.test(nia.trim());
 
 export const StorageService = {
   setRealtimeSyncHandlers(handlers: {
@@ -317,28 +152,81 @@ export const StorageService = {
     if (handlers.onDeleteUser) onUserDeletedCallback = handlers.onDeleteUser;
   },
 
+  purgeDemoData(): void {
+    try {
+      // 1. Purge demo users from storage
+      const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
+      if (storedUsers) {
+        const users: User[] = JSON.parse(storedUsers);
+        let modified = false;
+        const filtered = users.filter(u => u.role === 'admin' || (!DEMO_USER_IDS.includes(u.id) && !isDemoNia(u.nia)));
+        if (filtered.length !== users.length) modified = true;
+        filtered.forEach(u => {
+          if (u.role === 'admin' && /abdurrahman\s*hakim/i.test(u.namaLengkap)) {
+            u.namaLengkap = 'Administrator';
+            modified = true;
+          }
+        });
+        if (modified) {
+          this.saveUsers(filtered);
+        }
+      }
+
+      // 2. Purge demo records from storage
+      const storedRecords = localStorage.getItem(RECORDS_STORAGE_KEY);
+      if (storedRecords) {
+        const records: MutabaahRecord[] = JSON.parse(storedRecords);
+        const filteredRecords = records.filter(r => !DEMO_USER_IDS.includes(r.userId) && !isDemoNia(r.nia));
+        if (filteredRecords.length !== records.length) {
+          this.saveRecords(filteredRecords);
+        }
+      }
+
+      // 3. Purge active user session if it was a demo user
+      const storedCur = localStorage.getItem(CURRENT_USER_KEY);
+      if (storedCur) {
+        const cur: User = JSON.parse(storedCur);
+        if (DEMO_USER_IDS.includes(cur.id) || isDemoNia(cur.nia)) {
+          localStorage.removeItem(CURRENT_USER_KEY);
+        } else if (cur.role === 'admin' && /abdurrahman\s*hakim/i.test(cur.namaLengkap)) {
+          cur.namaLengkap = 'Administrator';
+          localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(cur));
+        }
+      }
+    } catch (e) {
+      console.error('Error purging demo data', e);
+    }
+  },
+
   getUsers(): User[] {
     try {
       const stored = localStorage.getItem(USERS_STORAGE_KEY);
       if (stored) {
         const parsed: User[] = JSON.parse(stored);
-        // Ensure admin password is migrated to bkapjakpus
-        let modified = false;
-        parsed.forEach(u => {
-          if (u.role === 'admin' && (u.password === 'admin' || !u.password)) {
-            u.password = 'bkapjakpus';
-            modified = true;
+        // Clean out demo accounts
+        const cleaned = parsed.filter(u => u.role === 'admin' || (!DEMO_USER_IDS.includes(u.id) && !isDemoNia(u.nia)));
+        let modified = cleaned.length !== parsed.length;
+        cleaned.forEach(u => {
+          if (u.role === 'admin') {
+            if (u.password === 'admin' || !u.password) {
+              u.password = 'bkapjakpus';
+              modified = true;
+            }
+            if (/abdurrahman\s*hakim/i.test(u.namaLengkap)) {
+              u.namaLengkap = 'Administrator';
+              modified = true;
+            }
           }
         });
         if (modified) {
-          this.saveUsers(parsed);
+          this.saveUsers(cleaned);
         }
-        return parsed;
+        return cleaned;
       }
     } catch (e) {
       console.error('Error reading users from localStorage', e);
     }
-    // Set initial
+    // Set initial with only admin
     this.saveUsers(INITIAL_USERS);
     return INITIAL_USERS;
   },
@@ -430,16 +318,19 @@ export const StorageService = {
     try {
       const stored = localStorage.getItem(RECORDS_STORAGE_KEY);
       if (stored) {
-        return JSON.parse(stored);
+        const parsed: MutabaahRecord[] = JSON.parse(stored);
+        // Purge any demo records associated with demo accounts
+        const cleaned = parsed.filter(r => !DEMO_USER_IDS.includes(r.userId) && !isDemoNia(r.nia));
+        if (cleaned.length !== parsed.length) {
+          this.saveRecords(cleaned);
+        }
+        return cleaned;
       }
     } catch (e) {
       console.error('Error reading records from localStorage', e);
     }
-    // Set initial with sample records
-    const users = this.getUsers();
-    const records = generateSampleRecords(users);
-    this.saveRecords(records);
-    return records;
+    this.saveRecords([]);
+    return [];
   },
 
   saveRecords(records: MutabaahRecord[]): void {
@@ -496,20 +387,34 @@ export const StorageService = {
       const stored = localStorage.getItem(CURRENT_USER_KEY);
       if (stored) {
         const cur: User = JSON.parse(stored);
-        if (cur.role === 'admin' && (cur.password === 'admin' || !cur.password)) {
-          cur.password = 'bkapjakpus';
-          this.setCurrentUser(cur);
+        if (DEMO_USER_IDS.includes(cur.id) || isDemoNia(cur.nia)) {
+          localStorage.removeItem(CURRENT_USER_KEY);
+        } else {
+          if (cur.role === 'admin') {
+            let curMod = false;
+            if (cur.password === 'admin' || !cur.password) {
+              cur.password = 'bkapjakpus';
+              curMod = true;
+            }
+            if (/abdurrahman\s*hakim/i.test(cur.namaLengkap)) {
+              cur.namaLengkap = 'Administrator';
+              curMod = true;
+            }
+            if (curMod) {
+              this.setCurrentUser(cur);
+            }
+          }
+          return cur;
         }
-        return cur;
       }
     } catch (e) {
       console.error('Error reading current user', e);
     }
-    // Default to admin or first user for instant preview
+    // Default to admin
     const users = this.getUsers();
-    const defaultUser = users[0]; // Admin by default
-    this.setCurrentUser(defaultUser);
-    return defaultUser;
+    const adminUser = users.find(u => u.role === 'admin') || users[0] || null;
+    this.setCurrentUser(adminUser);
+    return adminUser;
   },
 
   setCurrentUser(user: User | null): void {
@@ -583,3 +488,13 @@ export const StorageService = {
     return [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
   }
 };
+
+// Auto-purge any stale demo accounts and demo mutabaah records upon initialization
+try {
+  if (typeof window !== 'undefined') {
+    StorageService.purgeDemoData();
+  }
+} catch (e) {
+  // Ignore in SSR/test
+}
+

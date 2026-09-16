@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { User, JenisKelamin } from '../types';
 import { StorageService, DEFAULT_GROUPS } from '../utils/storage';
-import { X, UserPlus, AlertCircle, Check } from 'lucide-react';
+import { X, UserPlus, AlertCircle, Check, Lock, Eye, EyeOff } from 'lucide-react';
 
 interface AddMemberModalProps {
   onClose: () => void;
@@ -14,6 +14,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({ onClose, onMembe
   const [jenisKelamin, setJenisKelamin] = useState<JenisKelamin>('Laki-laki');
   const [kodeGrup, setKodeGrup] = useState(DEFAULT_GROUPS[0]);
   const [password, setPassword] = useState('123');
+  const [showPassword, setShowPassword] = useState(false);
   const [noHp, setNoHp] = useState('');
   const [error, setError] = useState('');
 
@@ -82,7 +83,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({ onClose, onMembe
               required
               value={nia}
               onChange={(e) => setNia(e.target.value)}
-              placeholder="Contoh: NIA-2024-010"
+              placeholder="Contoh: NIA-001"
               className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs focus:bg-white focus:ring-2 focus:ring-emerald-600 focus:outline-none"
             />
           </div>
@@ -137,13 +138,28 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({ onClose, onMembe
               <label className="block font-bold text-slate-700 mb-1">
                 Kata Sandi Awal
               </label>
-              <input
-                type="text"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Default: 123"
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs focus:bg-white focus:ring-2 focus:ring-emerald-600"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Default: 123"
+                  className="w-full pl-3 pr-8 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs focus:bg-white focus:ring-2 focus:ring-emerald-600"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? 'Sembunyikan kata sandi' : 'Lihat kata sandi'}
+                  title={showPassword ? 'Sembunyikan kata sandi' : 'Lihat kata sandi'}
+                  className="absolute right-2 top-1.5 p-1 text-slate-400 hover:text-emerald-700 focus:outline-none rounded transition-colors"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-3.5 h-3.5 text-emerald-600" />
+                  ) : (
+                    <Eye className="w-3.5 h-3.5" />
+                  )}
+                </button>
+              </div>
             </div>
 
             <div>

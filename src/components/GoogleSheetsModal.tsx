@@ -17,7 +17,8 @@ import {
   ArrowRight,
   ShieldCheck,
   Users,
-  Sparkles
+  Sparkles,
+  Trash2
 } from 'lucide-react';
 import { GoogleSheetsService, SyncStatusEvent } from '../services/googleSheetsService';
 import { StorageService } from '../utils/storage';
@@ -187,9 +188,15 @@ export const GoogleSheetsModal: React.FC<GoogleSheetsModalProps> = ({
     }
   };
 
-  const handleFillSampleText = () => {
-    const sample = `Nomor Induk Anggota (NIA)\tKode Grup / Usrah\tPassword\tNama Lengkap\tJenis Kelamin\nNIA-2024-001\tUSRAH-ALFALAH\t123\tAhmad Fauzan Pratama\tLaki-laki\nNIA-2024-002\tUSRAH-ANNUR\t123\tFathimah Az-Zahra\tPerempuan\nNIA-2024-003\tUSRAH-ALFALAH\t123\tMuhammad Ridwan Syahputra\tLaki-laki\nNIA-2024-004\tUSRAH-ANNUR\t123\tNurul Hidayah Putri\tPerempuan\nNIA-2024-005\tUSRAH-ALFALAH\t123\tZaid Abdullah Mansur\tLaki-laki\nNIA-2024-006\tUSRAH-ANNUR\t123\tAisyah Humaira\tPerempuan`;
-    setRawSheet3Text(sample);
+  const handlePurgeDemoAccounts = () => {
+    StorageService.purgeDemoData();
+    setFeedback({
+      type: 'success',
+      text: 'Semua akun demo bawaan dan riwayat sampel telah berhasil dibersihkan dari penyimpanan!'
+    });
+    if (onDataUpdated) {
+      onDataUpdated();
+    }
   };
 
   const handlePushAllRecords = async () => {
@@ -608,10 +615,12 @@ export const GoogleSheetsModal: React.FC<GoogleSheetsModalProps> = ({
                     <h4 className="text-xs font-bold text-slate-800">Tempel Data Langsung dari Sheet3 (Copy-Paste)</h4>
                   </div>
                   <button
-                    onClick={handleFillSampleText}
-                    className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 underline"
+                    onClick={handlePurgeDemoAccounts}
+                    className="text-xs font-medium text-rose-600 hover:text-rose-700 flex items-center gap-1 hover:underline"
+                    title="Bersihkan semua data akun demo dari penyimpanan lokal"
                   >
-                    + Masukkan Contoh Data
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Hapus Akun Demo</span>
                   </button>
                 </div>
                 <p className="text-xs text-slate-500">
@@ -622,7 +631,7 @@ export const GoogleSheetsModal: React.FC<GoogleSheetsModalProps> = ({
                   rows={5}
                   value={rawSheet3Text}
                   onChange={(e) => setRawSheet3Text(e.target.value)}
-                  placeholder={`Nomor Induk Anggota (NIA)\tKode Grup / Usrah\tPassword\tNama Lengkap\tJenis Kelamin\nNIA-2024-001\tUSRAH-ALFALAH\t123\tAhmad Fauzan Pratama\tLaki-laki`}
+                  placeholder={`Nomor Induk Anggota (NIA)\tKode Grup / Usrah\tPassword\tNama Lengkap\tJenis Kelamin\nNIA-001\tUSRAH-1\t123\tNama Anggota\tLaki-laki`}
                   className="w-full p-3 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none font-mono text-slate-800 resize-y"
                 />
 
@@ -781,28 +790,28 @@ export const GoogleSheetsModal: React.FC<GoogleSheetsModalProps> = ({
                     </thead>
                     <tbody className="divide-y divide-slate-200 font-mono text-[11px] text-slate-700 bg-white">
                       <tr>
-                        <td className="p-2.5 font-bold text-emerald-700 border-r border-slate-200">NIA-2024-001</td>
-                        <td className="p-2.5 border-r border-slate-200">USRAH-ALFALAH</td>
-                        <td className="p-2.5 border-r border-slate-200">123</td>
-                        <td className="p-2.5 font-sans font-medium text-slate-900 border-r border-slate-200">Ahmad Fauzan Pratama</td>
+                        <td className="p-2.5 font-bold text-emerald-700 border-r border-slate-200">NIA-001</td>
+                        <td className="p-2.5 border-r border-slate-200">USRAH-01</td>
+                        <td className="p-2.5 border-r border-slate-200">123456</td>
+                        <td className="p-2.5 font-sans font-medium text-slate-900 border-r border-slate-200">Contoh Nama Anggota 1</td>
                         <td className="p-2.5 border-r border-slate-200 font-sans">Laki-laki</td>
-                        <td className="p-2.5">081298765431</td>
+                        <td className="p-2.5">0812XXXXXXXX</td>
                       </tr>
                       <tr className="bg-slate-50/50">
-                        <td className="p-2.5 font-bold text-emerald-700 border-r border-slate-200">NIA-2024-002</td>
-                        <td className="p-2.5 border-r border-slate-200">USRAH-ANNUR</td>
-                        <td className="p-2.5 border-r border-slate-200">123</td>
-                        <td className="p-2.5 font-sans font-medium text-slate-900 border-r border-slate-200">Fathimah Az-Zahra</td>
+                        <td className="p-2.5 font-bold text-emerald-700 border-r border-slate-200">NIA-002</td>
+                        <td className="p-2.5 border-r border-slate-200">USRAH-02</td>
+                        <td className="p-2.5 border-r border-slate-200">123456</td>
+                        <td className="p-2.5 font-sans font-medium text-slate-900 border-r border-slate-200">Contoh Nama Anggota 2</td>
                         <td className="p-2.5 border-r border-slate-200 font-sans">Perempuan</td>
-                        <td className="p-2.5">081298765432</td>
+                        <td className="p-2.5">0812XXXXXXXX</td>
                       </tr>
                       <tr>
-                        <td className="p-2.5 font-bold text-emerald-700 border-r border-slate-200">NIA-2024-003</td>
-                        <td className="p-2.5 border-r border-slate-200">USRAH-ALFALAH</td>
-                        <td className="p-2.5 border-r border-slate-200">123</td>
-                        <td className="p-2.5 font-sans font-medium text-slate-900 border-r border-slate-200">Muhammad Ridwan Syahputra</td>
+                        <td className="p-2.5 font-bold text-emerald-700 border-r border-slate-200">NIA-003</td>
+                        <td className="p-2.5 border-r border-slate-200">USRAH-01</td>
+                        <td className="p-2.5 border-r border-slate-200">123456</td>
+                        <td className="p-2.5 font-sans font-medium text-slate-900 border-r border-slate-200">Contoh Nama Anggota 3</td>
                         <td className="p-2.5 border-r border-slate-200 font-sans">Laki-laki</td>
-                        <td className="p-2.5">081298765433</td>
+                        <td className="p-2.5">0812XXXXXXXX</td>
                       </tr>
                     </tbody>
                   </table>

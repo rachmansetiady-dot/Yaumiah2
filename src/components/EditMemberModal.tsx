@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { User, JenisKelamin } from '../types';
 import { StorageService, DEFAULT_GROUPS } from '../utils/storage';
-import { X, User as UserIcon, Shield, Lock, Phone, Users, Save, Check } from 'lucide-react';
+import { X, User as UserIcon, Shield, Lock, Eye, EyeOff, Phone, Users, Save, Check } from 'lucide-react';
 
 interface EditMemberModalProps {
   user: User | null;
@@ -23,6 +23,7 @@ export const EditMemberModal: React.FC<EditMemberModalProps> = ({
   const [customGrup, setCustomGrup] = useState(!DEFAULT_GROUPS.includes(user.kodeGrup) ? user.kodeGrup : '');
   const [jenisKelamin, setJenisKelamin] = useState<JenisKelamin>(user.jenisKelamin);
   const [password, setPassword] = useState(user.password || '123');
+  const [showPassword, setShowPassword] = useState(false);
   const [noHp, setNoHp] = useState(user.noHp || '');
   const [isSaved, setIsSaved] = useState(false);
 
@@ -105,7 +106,7 @@ export const EditMemberModal: React.FC<EditMemberModalProps> = ({
                 required
                 value={nia}
                 onChange={(e) => setNia(e.target.value)}
-                placeholder="Contoh: NIA-2024-001"
+                placeholder="Contoh: NIA-001"
                 className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-600 focus:outline-none"
               />
             </div>
@@ -116,14 +117,26 @@ export const EditMemberModal: React.FC<EditMemberModalProps> = ({
               </label>
               <div className="relative">
                 <input
-                  type="text"
+                  type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Kata sandi anggota"
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                  className="w-full pl-3.5 pr-9 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-600 focus:outline-none"
                 />
-                <Lock className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-3 pointer-events-none" />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? 'Sembunyikan kata sandi' : 'Lihat kata sandi'}
+                  title={showPassword ? 'Sembunyikan kata sandi' : 'Lihat kata sandi'}
+                  className="absolute right-2.5 top-2 p-1 text-slate-400 hover:text-emerald-700 focus:outline-none rounded transition-colors"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-3.5 h-3.5 text-emerald-600" />
+                  ) : (
+                    <Eye className="w-3.5 h-3.5" />
+                  )}
+                </button>
               </div>
             </div>
           </div>

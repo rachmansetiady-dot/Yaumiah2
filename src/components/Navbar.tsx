@@ -185,40 +185,42 @@ export const Navbar: React.FC<NavbarProps> = ({
                       </p>
                     </div>
 
-                    {/* Fast Switcher for Demo */}
-                    <div className="px-3 py-2 border-b border-slate-100">
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-xs font-semibold text-slate-500 flex items-center gap-1">
-                          <RefreshCw className="w-3 h-3 text-emerald-600" />
-                          Ganti Akun Cepat (Demo):
-                        </span>
-                      </div>
-                      <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
-                        {users.map((u) => (
-                          <button
-                            key={u.id}
-                            onClick={() => handleSwitchAccount(u)}
-                            className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs flex items-center justify-between transition-colors ${
-                              currentUser.id === u.id
-                                ? 'bg-emerald-50 text-emerald-800 font-semibold border border-emerald-200'
-                                : 'hover:bg-slate-100 text-slate-700'
-                            }`}
-                          >
-                            <div className="truncate">
-                              <span className="truncate block font-medium">{u.namaLengkap}</span>
-                              <span className="text-[10px] text-slate-400">
-                                {u.role === 'admin' ? 'Admin' : `${u.nia} • ${u.jenisKelamin}`}
+                    {/* Switcher if multiple accounts exist */}
+                    {users.length > 1 && (
+                      <div className="px-3 py-2 border-b border-slate-100">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-xs font-semibold text-slate-500 flex items-center gap-1">
+                            <RefreshCw className="w-3 h-3 text-emerald-600" />
+                            Ganti Akun:
+                          </span>
+                        </div>
+                        <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
+                          {users.map((u) => (
+                            <button
+                              key={u.id}
+                              onClick={() => handleSwitchAccount(u)}
+                              className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs flex items-center justify-between transition-colors ${
+                                currentUser.id === u.id
+                                  ? 'bg-emerald-50 text-emerald-800 font-semibold border border-emerald-200'
+                                  : 'hover:bg-slate-100 text-slate-700'
+                              }`}
+                            >
+                              <div className="truncate">
+                                <span className="truncate block font-medium">{u.namaLengkap}</span>
+                                <span className="text-[10px] text-slate-400">
+                                  {u.role === 'admin' ? 'Admin' : `${u.nia} • ${u.jenisKelamin}`}
+                                </span>
+                              </div>
+                              <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                                u.role === 'admin' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'
+                              }`}>
+                                {u.kodeGrup}
                               </span>
-                            </div>
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
-                              u.role === 'admin' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'
-                            }`}>
-                              {u.kodeGrup}
-                            </span>
-                          </button>
-                        ))}
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                    )}
 
                     <button
                       onClick={handleLogout}
