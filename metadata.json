@@ -1,0 +1,6 @@
+{
+  "name": "Mutabaah Yaumiah",
+  "description": "Aplikasi pencatatan dan evaluasi mutabaah yaumiah ibadah harian mencakup aspek ruhiah, fikriah, dan jasadiah dengan integrasi data anggota Google Sheet 'Sheet3' dan sinkronisasi real-time Google Apps Script.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
